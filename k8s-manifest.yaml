@@ -1,0 +1,28 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: birdword
+  labels:
+    app: birdword
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: birdword
+  template:
+    metadata:
+      labels:
+        app: birdword
+    spec:
+      containers:
+      - image: tzakrajs/birdword:latest
+        imagePullPolicy: Always
+        name: birdword
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 256Mi
+          requests:
+            cpu: 500m
+            memory: 128Mi
