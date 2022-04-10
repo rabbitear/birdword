@@ -40,10 +40,6 @@ ffmpeg_options = {
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
-music_queue = list()
-music_queue_playing = False
-music_queue_current_song = None
-
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
@@ -65,6 +61,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 class Music(commands.Cog):
     def __init__(self, bot):
+        self._queue = list()
+        self.current_song = None
         self.bot = bot
 
     @commands.command()
@@ -77,9 +75,8 @@ class Music(commands.Cog):
     @commands.command()
     async def add(self, ctx, *, url=None):
         """Add a song to a queue"""
-        global music_queue
         song_info = ytdl.extract_info(url, download=False)
-        music_queue.append(song_info)
+        self._queue.append(song_info)
 
     @commands.command()
     async def play(self, ctx, *, url=None):
@@ -87,38 +84,56 @@ class Music(commands.Cog):
         Add a song to a queue and start playing the queue. If no 
         url is given, then just start playing the queue.
         """
-        global music_queue
-        global music_queue_playing
-        global music_queue_current_song
+        global ytdl
         if url:
             song_info = ytdl.extract_info(url, download=False)
-            music_queue.append(song_info)
-        if not music_queue_playing:
+            self._queue.append(song_info)
+        if not ctx.voice_client.is_playing():
             print("we playing")
             # Since there isn't already a play method running, we can
             # start iterating through the queue.
-            music_queue_playing = True
-            while music_queue_playing and len(music_queue) > 0:
-                music_queue_current_song = music_queue.pop(0)
-                await self.stream(ctx, music_queue_current_song['url'])
-            music_queue_playing = False
+            while True:
+                print("processing queue")
+                await self.queue(ctx)
+                queue = await self.process_queue(ctx)
+                if not queue:
+                    break
+                await asyncio.sleep(1)
+
+    async def process_queue(self, ctx):
+        try:
+            self.current_song = self._queue.pop(0)
+        except IndexError:
+            return False
+        retry = 0
+        while retry < 6:
+            try:
+                await self.stream(ctx, self.current_song)
+                return True
+            except commands.errors.CommandInvokeError:
+                # Exponential backoff
+                await asyncio.sleep(2^retry)
+                retry+=1
+            except discord.errors.ClientException:
+                # Reconnect voice client
+                ctx.voice_client.stop()
+                await asyncio.sleep(2^retry)
+                await self.ensure_voice(ctx)
+            await ctx.send(f'Having trouble playing {self.current_song["title"]}')
                 
     @commands.command()
     async def skip(self, ctx):
         """Skip the currently playing song in queue"""
-        global music_queue
-        global music_queue_playing
         ctx.voice_client.stop()
-        music_queue_playing = False
         await self.play(ctx)
 
-    async def stream(self, ctx, url):
+    async def stream(self, ctx, song_info):
         """Streams from a url (same as yt, but doesn't predownload)"""
+        ytdl.cache.remove()
         async with ctx.typing():
-            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-            ctx.voice_client.play(player, after=lambda e: print(
-                f'Player error: {e}') if e else None)
-        await ctx.send(f'Now playing: {player.title}')
+            player = await YTDLSource.from_url(song_info['url'], loop=self.bot.loop, stream=True)
+            ctx.voice_client.play(player, after=await self.process_queue(ctx))
+        await ctx.send(f'Now playing: { song_info["title"] }')
 
     @commands.command()
     async def volume(self, ctx, volume: int):
@@ -132,30 +147,27 @@ class Music(commands.Cog):
     async def stop(self, ctx):
         """Stops and disconnects the bot from voice"""
         # Clean up music_queue variables for next play
-        global music_queue_playing
-        if music_queue_playing:
-            global music_queue
+        if self._queue_playing:
             # Reinsert the currently playing song into the queue
-            music_queue.insert(0, music_queue_current_song)
-            music_queue_playing = False
+            self._queue.insert(0, self.current_song)
+            self._queue_playing = False
         await ctx.voice_client.disconnect()
 
     @commands.command()
     async def q(self, *args, **kwargs):
         """Alias for queue"""
-        await self.queue(*args, **kwargs)
+        await self._queue(*args, **kwargs)
 
     @commands.command()
     async def queue(self, ctx):
         """Prints the music queue"""
-        await ctx.send('\n'.join([f"#{x}: {y['title']}" for x, y in enumerate(music_queue)]))
+        await ctx.send('\n'.join([f"#{x}: {y['title']}" for x, y in enumerate(self._queue)]))
 
     @commands.command()
     async def playnext(self, ctx, *, url):
         """Play this song next"""
-        global music_queue
         song_info = ytdl.extract_info(url, download=False)
-        music_queue.insert(0, song_info)
+        self._queue.insert(0, song_info)
 
     @commands.command()
     async def pause(self, ctx):
@@ -172,8 +184,7 @@ class Music(commands.Cog):
     @commands.command()
     async def clear(self, ctx):
         """Clears the music queue"""
-        global music_queue
-        music_queue = list()
+        self._queue = list()
         await ctx.send(f"queue has been cleared")
 
     @play.before_invoke
