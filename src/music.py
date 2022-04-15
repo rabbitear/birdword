@@ -3,6 +3,10 @@ import asyncio
 from discord.ext import commands
 import youtube_dl
 import birdlog
+import tracemalloc
+
+
+tracemalloc.start()
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
@@ -34,6 +38,14 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.url = data.get('url')
         # could return more stuff via this returning cls, which is player below
         self.error = data.get('error')
+        self.duration = data.get('duration')
+        self.description = data.get('discription')
+        self.view_count = data.get('view_count')
+        self.filesize = data.get('filesize')
+        self.upload_date = data.get('upload_date')
+        self.uploader = data.get('uploader')
+        self.format = data.get('format')
+        self.like_count = data.get('like_count')
 
     @classmethod
     async def from_url(cls, url, *, loop=None, stream=False):
@@ -43,6 +55,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
             # take first item from a playlist
             data = data['entries'][0]
         filename = data['url'] if stream else ytdl.prepare_filename(data)
+        # debug, find what the keys are
+        print(f'keys of data: {data.keys()}')
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
 
@@ -70,11 +84,6 @@ class music(commands.Cog):
     async def play(self, ctx, url):
         await self.queue.put(url)
         await ctx.send(f"adding url to queue...")
-
-    @commands.command()
-    async def queue(self, ctx):
-        queuelist = await self.queue.get()
-        await ctx.send(f"queue: {queuelist}")
 
     @commands.command()
     async def resume(self, ctx):
@@ -108,39 +117,46 @@ class music(commands.Cog):
     async def queue_playstream(self, ctx):
         """Streams from a queue of urls"""
         # this while is not correct.
+        size = 0
+        count = 0
+        di = f'qsize: {size}, wc: {count}'
         while True:
+            count += 1
             size = self.queue.qsize()
-            size_str = f'Entering while, queue size: {size}'
+            size_str = f'Entering while, {di}'
             await ctx.send(size_str)
             print(size_str)
             try:
-                url = self.queue.get_nowait()
                 async with ctx.typing():
+                    url = self.queue.get_nowait()
+                    await ctx.send(f'before ytdlsource, {di}')
                     player = await YTDLSource.from_url(url, loop=self.client.loop, stream=True)
-                    print(f'player error: {player.error}')
+                    print(f'player error: {player.error}, {di}')
+                    # play the sound now.
                     ctx.voice_client.play(player, after=lambda e: print(
                         f'Player error: {e}' if e else None))
-                await ctx.send(f'Now playing: {player.title}')
+
+                await ctx.send(f'Now playing: {player.title} (duration: {player.duration})')
+                await ctx.send(f'Uploader: {player.uploader}, Upload_date: {player.upload_date}, Filesize: {player.filesize}, Format: {player.format}, Views: {player.view_count}, Likes: {player.like_count}')
                 print(f"player title: {player.title}")
 
             except discord.errors.ClientException as e:
                 await ctx.send(f'ClientExecption: {e}')
                 print(f'ClientExecption: {e}')
-                await ctx.send(f'player title: {player.title}')
+                await ctx.send(f'CE: player title: {player.title}')
                 size = self.queue.qsize()
-                await ctx.send(f'trying queue join, queue size: {size}')
+                await ctx.send(f'di: {di}')
                 await self.queue.join()
-                await ctx.send(f'join done')
                 continue
             except asyncio.queues.QueueEmpty as e:
-                await ctx.send(f'The queue is now empty')
+                await ctx.send(f'QE: The queue is now empty, {di}')
                 break
             else:
                 self.queue.task_done()
-                await ctx.send(f'Task done')
+                await ctx.send(f'else: Task done {di}')
                 continue
             size = self.queue.qsize()
-            await ctx.send(f"While done, queue size: {size}")
+            await ctx.send(f"WHILE END, {di}")
 
 def setup(client):
     client.add_cog(music(client))
