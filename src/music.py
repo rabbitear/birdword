@@ -4,6 +4,7 @@ from discord.ext import commands
 import youtube_dl
 import birdlog
 import tracemalloc
+import pprint
 
 
 tracemalloc.start()
@@ -57,6 +58,11 @@ class YTDLSource(discord.PCMVolumeTransformer):
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         # debug, find what the keys are
         print(f'keys of data: {data.keys()}')
+        print(f'filename: {filename}')
+        print(f'--------------------')
+        pprint.pprint(f'OOOOH SHIIIT: {data}')
+        # no good v
+        #print(f'ffmpeg_opts: {**ffmpeg_options}')
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
 
@@ -102,6 +108,12 @@ class music(commands.Cog):
         """ Stop the currently paused song"""
         ctx.voice_client.stop()
         await ctx.send(f"song stopped")
+    # make another command:
+    # try to play anything on ctx.voice_client.play 
+    @commands.command()
+    async def m(self, ctx):
+        ctx.voice_client.play("https://www.youtube.com/watch?v=b5H3b_Hh0Lw")
+        await ctx.send(f"mmmmm playing with vc...")
 
     @play.before_invoke
     @resume.before_invoke
