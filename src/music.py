@@ -69,6 +69,7 @@ class music(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.queue = asyncio.Queue()
+        self.lastplay = []
 
 
     @commands.command()
@@ -86,10 +87,16 @@ class music(commands.Cog):
         await ctx.voice_client.disconnect()
 
     # fix this * thing, please!
+    # this needs help maybe
     @commands.command()
     async def play(self, ctx, *, url):
-        await self.queue.put(url)
-        await ctx.send(f"adding url to queue...")
+        if url in self.lastplay:
+            print("BAD! url!")
+        else:
+            print("ok url")
+            await self.queue.put(url)
+            await ctx.send(f"adding url to queue...")
+        self.lastplay.append(url)
 
     @commands.command()
     async def resume(self, ctx):
@@ -109,6 +116,21 @@ class music(commands.Cog):
         ctx.voice_client.stop()
         await ctx.send(f"song stopped")
 
+    @commands.command()
+    async def clear(self, ctx):
+        """ Clear the currently paused song"""
+        if ctx.voice_client:
+            ctx.voice_client.stop()
+        self.queue = asyncio.Queue()
+        await ctx.send(f"clear and song stopped")
+
+    @commands.command()
+    async def stats(self, ctx):
+        """We spit out the stats here"""
+        print(f'=-=-=-=- STRQUEUE -=-=-=-=\n{self.queue}')
+        print(f'=-=-=-=- ENDQUEUE -=-=-=-=')
+        print()
+        pass
 
     # EXPERIMENT: Try to make a raw static youtube request..
     @commands.command()
@@ -143,8 +165,6 @@ class music(commands.Cog):
                     url = self.queue.get_nowait()
                     await ctx.send(f'before ytdlsource, qs: {size}, wc: {count}')
                     player = await YTDLSource.from_url(url, loop=self.client.loop, stream=True)
-                    print(f'player error: {player.error}, qs: {size}, wc: {count}')
-                    # play the sound now.
                     print(f'-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
                     pprint.pprint(player)
                     print(f'-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
@@ -155,7 +175,15 @@ class music(commands.Cog):
                 await ctx.send(f'Uploader: {player.uploader}, Upload_date: {player.upload_date}, Filesize: {player.filesize}, Format: {player.format}, Views: {player.view_count}, Likes: {player.like_count}')
                 print(f"player title: {player.title}")
 
+            # The song is already playing
             except discord.errors.ClientException as e:
+                print("The song is already playing....")
+                print(self.queue)
+                # maybe add it to the queue again here?
+                # help
+                # we shall see... hmmmmmmmmmmmmmmmmmmmm!
+                await self.queue.put(player.url)
+
                 await ctx.send(f'ClientExecption: {e}')
                 print(f'ClientExecption: {e}')
                 await ctx.send(f'CE: player title: {player.title}')
@@ -164,14 +192,17 @@ class music(commands.Cog):
                 await self.queue.join()
                 continue
             except asyncio.queues.QueueEmpty as e:
+                print(self.queue)
                 await ctx.send(f'QE: The queue is now empty, qs: {size}, wc: {count}')
                 break
             else:
+                print(self.queue)
                 self.queue.task_done()
                 await ctx.send(f'else: Task done qs: {size}, wc: {count}')
                 continue
             size = self.queue.qsize()
             await ctx.send(f"WHILE END, qs: {size}, wc: {count}")
+            print(self.queue)
 
 def setup(client):
     client.add_cog(music(client))
