@@ -58,11 +58,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         # debug, find what the keys are
         print(f'keys of data: {data.keys()}')
-        print(f'filename: {filename}')
         print(f'--------------------')
         pprint.pprint(f'OOOOH SHIIIT: {data}')
-        # no good v
-        #print(f'ffmpeg_opts: {**ffmpeg_options}')
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
 
@@ -108,11 +105,13 @@ class music(commands.Cog):
         """ Stop the currently paused song"""
         ctx.voice_client.stop()
         await ctx.send(f"song stopped")
-    # make another command:
-    # try to play anything on ctx.voice_client.play 
+
+
+    # EXPERIMENT: Try to make a raw static youtube request..
     @commands.command()
     async def m(self, ctx):
         ctx.voice_client.play("https://www.youtube.com/watch?v=b5H3b_Hh0Lw")
+        # this is not done!
         await ctx.send(f"mmmmm playing with vc...")
 
     @play.before_invoke
@@ -135,16 +134,19 @@ class music(commands.Cog):
         while True:
             count += 1
             size = self.queue.qsize()
-            size_str = f'Entering while, {di}'
+            size_str = f'Entering while, qs: {size}, wc: {count}'
             await ctx.send(size_str)
             print(size_str)
             try:
                 async with ctx.typing():
                     url = self.queue.get_nowait()
-                    await ctx.send(f'before ytdlsource, {di}')
+                    await ctx.send(f'before ytdlsource, qs: {size}, wc: {count}')
                     player = await YTDLSource.from_url(url, loop=self.client.loop, stream=True)
-                    print(f'player error: {player.error}, {di}')
+                    print(f'player error: {player.error}, qs: {size}, wc: {count}')
                     # play the sound now.
+                    print("----------------------------------")
+                    pprint.pprint(player)
+                    print("----------------------------------")
                     ctx.voice_client.play(player, after=lambda e: print(
                         f'Player error: {e}' if e else None))
 
@@ -157,18 +159,18 @@ class music(commands.Cog):
                 print(f'ClientExecption: {e}')
                 await ctx.send(f'CE: player title: {player.title}')
                 size = self.queue.qsize()
-                await ctx.send(f'di: {di}')
+                await ctx.send(f'di: qs: {size}, wc: {count}')
                 await self.queue.join()
                 continue
             except asyncio.queues.QueueEmpty as e:
-                await ctx.send(f'QE: The queue is now empty, {di}')
+                await ctx.send(f'QE: The queue is now empty, qs: {size}, wc: {count}')
                 break
             else:
                 self.queue.task_done()
-                await ctx.send(f'else: Task done {di}')
+                await ctx.send(f'else: Task done qs: {size}, wc: {count}')
                 continue
             size = self.queue.qsize()
-            await ctx.send(f"WHILE END, {di}")
+            await ctx.send(f"WHILE END, qs: {size}, wc: {count}")
 
 def setup(client):
     client.add_cog(music(client))
