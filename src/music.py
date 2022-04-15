@@ -58,8 +58,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         # debug, find what the keys are
         print(f'keys of data: {data.keys()}')
-        print(f'--------------------')
-        pprint.pprint(f'OOOOH SHIIIT: {data}')
+        print(f'-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
+
+        # change compact!!! please.
+        pprint.pprint(f'OOOOH SHIIIT: {data}', compact=False)
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
 
@@ -83,8 +85,9 @@ class music(commands.Cog):
     async def disconnect(self, ctx):
         await ctx.voice_client.disconnect()
 
+    # fix this * thing, please!
     @commands.command()
-    async def play(self, ctx, url):
+    async def play(self, ctx, *, url):
         await self.queue.put(url)
         await ctx.send(f"adding url to queue...")
 
@@ -128,9 +131,7 @@ class music(commands.Cog):
     async def queue_playstream(self, ctx):
         """Streams from a queue of urls"""
         # this while is not correct.
-        size = 0
         count = 0
-        di = f'qsize: {size}, wc: {count}'
         while True:
             count += 1
             size = self.queue.qsize()
@@ -144,9 +145,9 @@ class music(commands.Cog):
                     player = await YTDLSource.from_url(url, loop=self.client.loop, stream=True)
                     print(f'player error: {player.error}, qs: {size}, wc: {count}')
                     # play the sound now.
-                    print("----------------------------------")
+                    print(f'-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
                     pprint.pprint(player)
-                    print("----------------------------------")
+                    print(f'-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
                     ctx.voice_client.play(player, after=lambda e: print(
                         f'Player error: {e}' if e else None))
 
