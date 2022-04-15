@@ -60,8 +60,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         print(f'keys of data: {data.keys()}')
         print(f'-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
 
-        # change compact!!! please.
-        pprint.pprint(f'OOOOH SHIIIT: {data}', compact=False)
+        # debug?
+        #pprint.pprint(f'OOOOH SHIIIT: {data}', compact=False)
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
 
 
