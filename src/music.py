@@ -57,6 +57,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
             data = data['entries'][0]
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         # debug, find what the keys are
+        print(f'-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
+        #for key in data.keys():
+        #    print(f'{key} - {data['key']}')
         print(f'keys of data: {data.keys()}')
         print(f'-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-')
 
@@ -174,6 +177,7 @@ class music(commands.Cog):
                 await ctx.send(f'Now playing: {player.title} (duration: {player.duration})')
                 await ctx.send(f'Uploader: {player.uploader}, Upload_date: {player.upload_date}, Filesize: {player.filesize}, Format: {player.format}, Views: {player.view_count}, Likes: {player.like_count}')
                 print(f"player title: {player.title}")
+                continue
 
             # The song is already playing
             except discord.errors.ClientException as e:
