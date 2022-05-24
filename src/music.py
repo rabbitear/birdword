@@ -29,7 +29,8 @@ ffmpeg_options = {
 }
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-print(f"ytdl is: {ytdl}")
+#songs = asyncio.Queue()
+#play_next_song = asyncio.Event()
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
@@ -74,6 +75,16 @@ class music(commands.Cog):
         self.queue = asyncio.Queue()
         self.lastplay = []
 
+    # the audio player
+    #async def audio_player_task():
+    #    while True:
+    #        play_next_song.clear()
+    #        current = await songs.get()
+    #        current.start()
+    #        await play_next_song.wait()
+
+    #def toggle_next():
+    #    client.loop.call_soon_threadsafe(play_next_song.set)
 
     @commands.command()
     async def join(self, ctx):
@@ -88,6 +99,14 @@ class music(commands.Cog):
     @commands.command()
     async def disconnect(self, ctx):
         await ctx.voice_client.disconnect()
+
+    @commands.command()
+    async def snd(self, ctx, *, file=None):
+        """Play a local sound"""
+        audio_source = discord.FFmpegPCMAudio('hello.mp3')
+        if not ctx.voice_client.is_playing():
+            ctx.voice_client.play(audio_source, after=None)
+        await ctx.send(f'Now playing: { audio_source }')
 
     # fix this * thing, please!
     # this needs help maybe
@@ -210,5 +229,7 @@ class music(commands.Cog):
 
 def setup(client):
     client.add_cog(music(client))
+    # create audio_player_task on loop
+    #client.loop.create_task(audio_player_task())
     print("added music cog to client")
 

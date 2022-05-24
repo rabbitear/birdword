@@ -79,6 +79,16 @@ class Music(commands.Cog):
         self._queue.append(song_info)
 
     @commands.command()
+    async def snd(self, ctx, *, file=None):
+        """Play a local sound"""
+        audio_source = discord.FFmpegPCMAudio('hello.mp3')
+        if not ctx.voice_client.is_playing():
+            ctx.voice_client.play(audio_source, after=None)
+        await ctx.send(f'Now playing: { audio_source }')
+
+    
+
+    @commands.command()
     async def play(self, ctx, *, url=None):
         """
         Add a song to a queue and start playing the queue. If no 
