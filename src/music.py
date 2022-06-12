@@ -86,19 +86,19 @@ class music(commands.Cog):
     #def toggle_next():
     #    client.loop.call_soon_threadsafe(play_next_song.set)
 
-    @commands.command()
-    async def join(self, ctx):
-        if ctx.author.voice is None:
-            await ctx.send("You are not in a voice channel!")
-        voice_channel = ctx.author.voice.channel
-        if ctx.voice_client is None:
-            await voice_channel.connect()
-        else: 
-            await ctx.voice_client.move_to(voice_channel)
-
-    @commands.command()
-    async def disconnect(self, ctx):
-        await ctx.voice_client.disconnect()
+#    @commands.command()
+#    async def join(self, ctx):
+#        if ctx.author.voice is None:
+#            await ctx.send("You are not in a voice channel!")
+#        voice_channel = ctx.author.voice.channel
+#        if ctx.voice_client is None:
+#            await voice_channel.connect()
+#        else:
+#            await ctx.voice_client.move_to(voice_channel)
+#
+#    @commands.command()
+#    async def disconnect(self, ctx):
+#        await ctx.voice_client.disconnect()
 
     @commands.command()
     async def snd(self, ctx, *, file=None):
@@ -113,24 +113,24 @@ class music(commands.Cog):
     @commands.command()
     async def play(self, ctx, *, url):
         if url in self.lastplay:
-            print("BAD! url!")
+            print("URL in lastplay!")
         else:
-            print("ok url")
-            await self.queue.put(url)
-            await ctx.send(f"adding url to queue...")
+            print("URL not in lastplay!")
+        await self.queue.put(url)
+        await ctx.send(f"adding url to queue...")
         self.lastplay.append(url)
 
-    @commands.command()
-    async def resume(self, ctx):
-        """Resume the currently paused song"""
-        ctx.voice_client.resume()
-        await ctx.send(f"song resumed")
-
-    @commands.command()
-    async def pause(self, ctx):
-        """Pause the currently paused song"""
-        ctx.voice_client.pause()
-        await ctx.send(f"song paused")
+#    @commands.command()
+#    async def resume(self, ctx):
+#        """Resume the currently paused song"""
+#        ctx.voice_client.resume()
+#        await ctx.send(f"song resumed")
+#
+#    @commands.command()
+#    async def pause(self, ctx):
+#        """Pause the currently paused song"""
+#        ctx.voice_client.pause()
+#        await ctx.send(f"song paused")
 
     @commands.command()
     async def stop(self, ctx):
@@ -138,13 +138,13 @@ class music(commands.Cog):
         ctx.voice_client.stop()
         await ctx.send(f"song stopped")
 
-    @commands.command()
-    async def clear(self, ctx):
-        """ Clear the currently paused song"""
-        if ctx.voice_client:
-            ctx.voice_client.stop()
-        self.queue = asyncio.Queue()
-        await ctx.send(f"clear and song stopped")
+#    @commands.command()
+#    async def clear(self, ctx):
+#        """ Clear the currently paused song"""
+#        if ctx.voice_client:
+#            ctx.voice_client.stop()
+#        self.queue = asyncio.Queue()
+#        await ctx.send(f"clear and song stopped")
 
     @commands.command()
     async def stats(self, ctx):
@@ -162,7 +162,7 @@ class music(commands.Cog):
         await ctx.send(f"mmmmm playing with vc...")
 
     @play.before_invoke
-    @resume.before_invoke
+#    @resume.before_invoke
     async def ensure_voice(self, ctx):
         if ctx.voice_client is None:
             if ctx.author.voice:
@@ -205,7 +205,8 @@ class music(commands.Cog):
                 # maybe add it to the queue again here?
                 # help
                 # we shall see... hmmmmmmmmmmmmmmmmmmmm!
-                await self.queue.put(player.url)
+                # there is no player here?
+                #await self.queue.put(player.url)
 
                 await ctx.send(f'ClientExecption: {e}')
                 print(f'ClientExecption: {e}')
