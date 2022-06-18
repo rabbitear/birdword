@@ -42,16 +42,15 @@ async def on_message(message):
         print(f"CONTENT: {message.content}")
         print(f"EMBEDS:  {message.embeds}")
         print(f"len(embeds): {len(message.embeds)}")
-        if len(message.embeds):
-            desc = message.embeds[0].description
-            titl = message.embeds[0].title
-            embedurl = message.embeds[0].url
-            print(f"DESC: {desc}")
-            print(f"TITL: {titl}")
-            print(f"url: {embedurl}")
-            await message.channel.send(f'BLA titl: {titl}')
-            await message.channel.send(f'BLA desc: {desc}')
-            await message.channel.send(f'BLA embedurl: {embedurl}')
+        #if len(message.embeds):
+        #for i in message.embeds:
+        for i, embed in enumerate(message.embeds):
+            desc = message.embeds[i].description
+            titl = message.embeds[i].title
+            print(f"DESC{i}: {desc}")
+            print(f"TITL{i}: {titl}")
+            await message.channel.send(f'from {message.author} the BLA BLA title{i}: {message.embeds[0].title}')
+            await message.channel.send(f'from {message.author} the BLA BLA description{i}: {message.embeds[0].description}')
 
         [print(i) for i in message.embeds]
         print(f"type: {type(message.embeds)}")
