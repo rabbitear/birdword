@@ -34,16 +34,28 @@ async def on_message(message):
 
 @bot.listen()
 async def on_message(message):
-    if message.author.name == 'rabbitbird' or message.author.name =='StormBeatz':
+    if message.author.name == 'rabbitear' or message.author.name =='StormBeatz':
         await message.channel.send('blah blah bla bla')
         print(f"---- {message.author.name} ----")
-        print(f"message: {message}")
+        print(f"MESSAGE: {message}")
         print("---")
-        print(f"content: {message.content}")
-        print(f"embeds:  {message.embeds}")
+        print(f"CONTENT: {message.content}")
+        print(f"EMBEDS:  {message.embeds}")
         print(f"len(embeds): {len(message.embeds)}")
+        if len(message.embeds):
+            desc = message.embeds[0].description
+            titl = message.embeds[0].title
+            embedurl = message.embeds[0].url
+            print(f"DESC: {desc}")
+            print(f"TITL: {titl}")
+            print(f"url: {embedurl}")
+            await message.channel.send(f'BLA titl: {titl}')
+            await message.channel.send(f'BLA desc: {desc}')
+            await message.channel.send(f'BLA embedurl: {embedurl}')
+
         [print(i) for i in message.embeds]
         print(f"type: {type(message.embeds)}")
+        print(f"webhook_id: {message.webhook_id}")
         print("---")
 
 for i in range(len(cogs)):
