@@ -34,16 +34,17 @@ async def on_message(message):
 
 @bot.listen()
 async def on_message(message):
-    if message.author.name == 'rabbitear' or message.author.name =='StormBeatz':
+    #if message.author.name == 'rabbitear' or message.author.name =='StormBeatz':
+    if message.author.id == bot.user.id:
+        return
+    else:
         await message.channel.send('blah blah bla bla')
-        print(f"---- {message.author.name} ----")
+        print(f"---- {message.author.name} ---- botname: {bot.user}")
         print(f"MESSAGE: {message}")
         print("---")
         print(f"CONTENT: {message.content}")
         print(f"EMBEDS:  {message.embeds}")
         print(f"len(embeds): {len(message.embeds)}")
-        #if len(message.embeds):
-        #for i in message.embeds:
         for i, embed in enumerate(message.embeds):
             desc = message.embeds[i].description
             titl = message.embeds[i].title
